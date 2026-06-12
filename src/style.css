@@ -1,0 +1,581 @@
+:root {
+  --primary: #c084fc;
+  --primary-hover: #e9d5ff;
+  --bg-dark: #09090b;
+  --bg-panel: rgba(15, 23, 42, 0.75);
+  --bg-glass: rgba(24, 24, 27, 0.65);
+  --border-glass: rgba(255, 255, 255, 0.1);
+  --text-main: #f4f4f5;
+  --text-muted: #a1a1aa;
+  --sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-dark);
+  font-family: var(--sans);
+  color: var(--text-main);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+#app {
+  width: 100%;
+  max-width: 1100px;
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ゲーム全体を包むアスペクト比16:9のコンテナ */
+.game-viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background-color: #020205;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.8),
+    0 0 40px rgba(192, 132, 252, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  container-type: inline-size;
+  container-name: game;
+}
+
+/* レイヤー定義 */
+.layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-size: cover;
+  background-position: center;
+  transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.bg-layer {
+  z-index: 1;
+}
+
+.character-layer {
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding-bottom: 8%; /* メッセージウィンドウの上に置くための調整 */
+  gap: 5%;
+}
+
+.character-img {
+  height: 85%;
+  object-fit: contain;
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease;
+  transform: translateY(0);
+}
+
+.character-img.enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.character-img.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* メッセージレイヤー */
+.ui-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 24px;
+  box-sizing: border-box;
+  background: linear-gradient(to top, rgba(2, 2, 5, 0.6) 0%, transparent 40%);
+}
+
+/* メッセージボックス */
+.message-box {
+  width: 100%;
+  min-height: 120px;
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  border-radius: 12px;
+  padding: 16px 24px;
+  box-sizing: border-box;
+  position: relative;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  transition: border-color 0.2s ease;
+}
+
+.message-box:hover {
+  border-color: rgba(192, 132, 252, 0.3);
+}
+
+.speaker-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 8px;
+  min-height: 20px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.message-text {
+  font-size: 18px;
+  line-height: 1.6;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  word-break: break-all;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+/* テキスト送りのインジケータ */
+.click-indicator {
+  position: absolute;
+  right: 20px;
+  bottom: 15px;
+  width: 10px;
+  height: 10px;
+  background-color: var(--primary);
+  border-radius: 50%;
+  animation: blink 1s infinite alternate;
+}
+
+@keyframes blink {
+  from {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+/* メニューバー (メッセージボックスの下) */
+.menu-bar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+  pointer-events: auto;
+}
+
+.menu-button {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-glass);
+  color: var(--text-muted);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: var(--transition);
+  font-weight: 500;
+}
+
+.menu-button:hover {
+  background: rgba(192, 132, 252, 0.15);
+  color: var(--text-main);
+  border-color: rgba(192, 132, 252, 0.3);
+}
+
+/* 選択肢画面 */
+.choices-container {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  background: rgba(2, 2, 5, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+
+.choices-container.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.choice-button {
+  background: var(--bg-glass);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border-glass);
+  color: var(--text-main);
+  font-size: 16px;
+  padding: 12px 32px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: var(--transition);
+  width: 80%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.choice-button:hover {
+  background: rgba(192, 132, 252, 0.2);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(192, 132, 252, 0.2);
+}
+
+/* モーダル画面 (セーブ、ロード、履歴用) */
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: rgba(9, 9, 11, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  padding: 32px;
+  box-sizing: border-box;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 12px;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 24px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.modal-close:hover {
+  color: var(--text-main);
+  transform: scale(1.1);
+}
+
+.modal-content {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+/* セーブスロットグリッド */
+.slots-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  height: 100%;
+}
+
+@media (max-width: 640px) {
+  .slots-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.save-slot {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 80px;
+}
+
+.save-slot:hover {
+  background: rgba(192, 132, 252, 0.08);
+  border-color: rgba(192, 132, 252, 0.4);
+}
+
+.slot-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.slot-number {
+  font-weight: bold;
+}
+
+.slot-body {
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slot-footer {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+/* バックログ画面 */
+.backlog-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 100%;
+}
+
+.backlog-item {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  padding: 12px 16px;
+  border-left: 3px solid var(--primary);
+}
+
+.backlog-speaker {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.backlog-text {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* スクロールバーのカスタマイズ */
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* タイトル・メニュー画面 */
+.title-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: radial-gradient(
+    circle at center,
+    rgba(15, 23, 42, 0.9) 0%,
+    rgba(9, 9, 11, 0.98) 100%
+  );
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 32px;
+  transition: opacity 0.5s ease;
+}
+
+.title-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.game-title {
+  font-size: 42px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #f3e8ff 0%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+.title-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 200px;
+}
+
+.title-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-glass);
+  color: var(--text-main);
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: center;
+}
+
+.title-btn:hover {
+  background: rgba(192, 132, 252, 0.2);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+/* スマホ・小型デバイス向けコンテナクエリ (ゲーム画面幅700px以下) */
+@container game (max-width: 700px) {
+  .speaker-name {
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  .message-text {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .message-box {
+    min-height: 90px;
+    padding: 12px 18px;
+  }
+  .click-indicator {
+    right: 15px;
+    bottom: 10px;
+    width: 8px;
+    height: 8px;
+  }
+  .menu-button {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+  .choice-button {
+    font-size: 14px;
+    padding: 10px 24px;
+    width: 90%;
+  }
+  .modal-overlay {
+    padding: 16px;
+  }
+  .modal-title {
+    font-size: 16px;
+  }
+  .save-slot {
+    padding: 10px;
+    min-height: 60px;
+  }
+  .slot-body {
+    font-size: 12px;
+    margin: 8px 0;
+  }
+  .slot-footer {
+    font-size: 10px;
+  }
+  .game-title {
+    font-size: 28px;
+  }
+  .title-btn {
+    padding: 8px 20px;
+    font-size: 14px;
+  }
+}
+
+/* さらに小さい画面 (ゲーム画面幅480px以下、スマホ縦画面の縮小状態) */
+@container game (max-width: 480px) {
+  .speaker-name {
+    font-size: 11px;
+    margin-bottom: 2px;
+  }
+  .message-text {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .message-box {
+    min-height: 75px;
+    padding: 8px 12px;
+  }
+  .menu-bar {
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .menu-button {
+    font-size: 8px;
+    padding: 2px 6px;
+  }
+  .choice-button {
+    font-size: 11px;
+    padding: 8px 20px;
+    margin-bottom: 2px;
+  }
+  .slots-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .save-slot {
+    padding: 8px;
+    min-height: 50px;
+  }
+  .slot-body {
+    font-size: 10px;
+    margin: 4px 0;
+  }
+}
+
+/* スマートフォン向けの全体的なメディアクエリ (デバイス幅依存) */
+@media (max-width: 640px) {
+  body {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+  }
+  #app {
+    padding: 8px;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+  }
+  .game-viewport {
+    border-radius: 8px;
+  }
+}
